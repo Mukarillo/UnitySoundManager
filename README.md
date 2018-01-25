@@ -3,16 +3,16 @@ Simple, yet powerful, sound manager for Unity with 3 tracks, language system, po
 
 ## Setup Project
 ![setup](https://raw.githubusercontent.com/Mukarillo/UnitySoundManager/master/Images/Screen%20Shot%202018-01-24%20at%2010.14.14%20PM.png)
-To create an instance of SoundManager, click Time Saver Tools>Sound Manager> Add SoundManager. A GameObject will be created at root with SoundManager component.
+To create an instance of SoundManager, click `Time Saver Tools>Sound Manager> Add SoundManager`. A GameObject will be created at root with SoundManager component.
 
 # Sound Manager Properties
 ![properties](https://raw.githubusercontent.com/Mukarillo/UnitySoundManager/master/Images/Screen%20Shot%202018-01-24%20at%2011.36.54%20PM.png)
 
-**Use this forever**: If checked, the game won't be destroyed when changing scenes. Use this feature if you want to have only one instance of SoundManager through out the whole project.
+**Use this forever**: when checked, the GameObject won't be destroyed when changing scenes. Use this feature if you want to have only one instance of SoundManager through out the whole project.
 
  **Project FPS**: This is used to calculate events and Fade-in/out effects. If you don't know the project fps, leave it at 60.
 
-**Use Pool Feature**: if checked, an array of GameObjects will be created at editor time, avoiding instantiating at run time. If not checked, it will create a GameObject every time `SoundManager.Play` is called.
+**Use Pool Feature**: when checked, an array of GameObjects will be created at editor time, avoiding instantiating at run time. If not checked, it will create a GameObject every time `SoundManager.Play` is called.
 - **Pool Quantity**: the quantity of game objects to be created. (Sound will only play if there is at least one available GameObject in the pool)
 
 **Use Multi-Language Feature** : Use this if your project aims multi-language target. It will allow you to swap between languages while in run time. When creating the sounds, you can have multiple instances with the same `name` and different language, the Sound Manager will check the current language and use the right one.
@@ -21,7 +21,7 @@ To create an instance of SoundManager, click Time Saver Tools>Sound Manager> Add
 
 ![editingchannel](https://raw.githubusercontent.com/Mukarillo/UnitySoundManager/master/Images/Screen%20Shot%202018-01-24%20at%2011.40.02%20PM.png)
 
-The Sound Manager have three channels: *background*, *Effects* and *Voice*. These are just their names and you can use them to whatever you want. 
+The Sound Manager has three channels: *background*, *Effects* and *Voice*. These are just their names and you can use them to whatever kind of sound you want.
 
 **Volume**: You can setup the initial volume for the selected channel.
 
@@ -46,7 +46,7 @@ You have two options to add `Sound Clip`, first one would be clicking `Add Sound
 ![conf2](https://github.com/Mukarillo/UnitySoundManager/blob/master/Images/confpanel1.jpg?raw=true)
 
 **7**- The audio clip.<br />
-**8**- Name (you will use this name to play the sound by code).<br />
+**8**- Name (used to refer to this song in the source code).<br />
 **9**- Volume.<br />
 **10**- Loop toggle.<br />
 **11**- Fade in/out effects toggle.<br />
@@ -60,7 +60,7 @@ You have two options to add `Sound Clip`, first one would be clicking `Add Sound
 
 ![conf4](https://github.com/Mukarillo/UnitySoundManager/blob/master/Images/confpanel3.jpg?raw=true)
 
-**Trigger Event**: If checked, will try to call a function called `OnSoundTrigger` in all components attached in the `Target GameObject`. If `Time` is set to `-1`, the event will trigger at the end of the sound, if set to `0`, the event will be triggered at the start of the sound.
+**Trigger Event**: when checked, will try to call a function called `OnSoundTrigger` in all components attached in the `Target GameObject`. If `Time` is set to `-1`, the event will trigger at the end of the sound, if set to `0`, the event will be triggered at the start of the sound.
 
 # Coding - Functions
  
