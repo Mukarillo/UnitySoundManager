@@ -1,0 +1,15 @@
+﻿<Properties StartupConfiguration="{5FC4B81A-0558-D457-908E-5185B25E01EB}|">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets/TimeSaverSoundManager/readme.txt">
+    <Files>
+      <File FileName="Assets/TimeSaverSoundManager/Scripts/SoundManager.cs" Line="737" Column="26" />
+      <File FileName="Assets/TimeSaverSoundManager/readme.txt" Line="63" Column="51" />
+    </Files>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore />
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+  <MonoDevelop.Ide.ItemProperties.TimeSaverSoundManager PreferredExecutionTarget="Unity.Editor" />
+  <MultiItemStartupConfigurations />
+</Properties>
