@@ -78,12 +78,12 @@ public class SoundManager : MonoBehaviour {
 	//private
 	private static Sound[] _AllSounds;
 	private static bool _usePool;
-	private static int _qntPool;
-	private static List<GameObject> _pool;
-	private static float _bkgVolumeHold;
-	private static float _efxVolumeHold;
-	private static float _voiceVolumeHold;
-	private static bool _playStreamSound;
+	private static List<AudioSource> _pool = new List<AudioSource>();
+	private static float _bkgVolumeHold = 1;
+	private static float _efxVolumeHold = 1;
+	private static float _voiceVolumeHold = 1;
+    private static float _allVolumeHold = 1;
+    private static bool _playStreamSound;
 	private static List<AudioSource> _streamSoundSource;
 	private static List<AudioClip> _streamSoundClip;
 	
@@ -93,53 +93,37 @@ public class SoundManager : MonoBehaviour {
 	/// Use this to check the background track volume, or to set background track volume.
 	/// </summary>
 	public static float backgroundVolume{
-		set{
-			List<Sound> hold = new List<Sound>();
-			for(int i = 0; i < _AllSounds.Length;i++){
-				if(string.Equals(_AllSounds[i].track.ToString(), track.BackgroundSound.ToString())){
-					hold.Add(_AllSounds[i]);	
-				}
-			}
-			if(hold.Count == 0) return;
-			_bkgVolumeHold = BetweenZeroOne(value);Volume(BetweenZeroOne(value), track.BackgroundSound);}
+		set{ Volume(value, track.BackgroundSound); }
 		get{return _bkgVolumeHold;}
 	}
 	/// <summary>
 	/// Use this to check the effect track volume, or to set effect track volume.
 	/// </summary>
 	public static float effectsVolume{
-		set{
-			List<Sound> hold = new List<Sound>();
-			for(int i = 0; i < _AllSounds.Length;i++){
-				if(string.Equals(_AllSounds[i].track.ToString(), track.EffectSound.ToString())){
-					hold.Add(_AllSounds[i]);	
-				}
-			}
-			if(hold.Count == 0) return;
-			_efxVolumeHold = BetweenZeroOne(value);
-			Volume(BetweenZeroOne(value), track.EffectSound);}
+		set{ Volume(value, track.EffectSound); }
 		get{return _efxVolumeHold;}
 	}
 	/// <summary>
 	/// Use this to check the voice track volume, or to set background voice volume.
 	/// </summary>
 	public static float voiceVolume{
-		set{
-			List<Sound> hold = new List<Sound>();
-			for(int i = 0; i < _AllSounds.Length;i++){
-				if(string.Equals(_AllSounds[i].track.ToString(), track.VoiceSound.ToString())){
-					hold.Add(_AllSounds[i]);	
-				}
-			}
-			if(hold.Count == 0) return;
-			_voiceVolumeHold = BetweenZeroOne(value);Volume (BetweenZeroOne(value), track.VoiceSound);}
+		set{ Volume (value, track.VoiceSound); }
 		get{return _voiceVolumeHold;}
 	}
-	
-	/// <summary>
-	/// Use this to change the TSSM language. Use a valid string, otherwise it will print an error.
-	/// </summary>
-	public static string language{
+
+    /// <summary>
+    /// Use this to check all track volume, or to set all volume.
+    /// </summary>
+    public static float allVolume
+    {
+        set { Volume(value, track.All); }
+        get { return _allVolumeHold; }
+    }
+
+    /// <summary>
+    /// Use this to change the TSSM language. Use a valid string, otherwise it will print an error.
+    /// </summary>
+    public static string language{
 		set{
 			bool has = false;
 			for(int i=0;i<_AllLanguages.Length;i++){
@@ -154,8 +138,7 @@ public class SoundManager : MonoBehaviour {
 		get{return _currentLanguage;}
 	}
 	
-	private static int _currentPoolIndex;
-	private static GameObject _currentPlaying;
+	private static AudioSource _currentPlaying;
 	private static float _timeToFadeIn;
 	private static int _controllerFadeIn;
 	private static GameObject _thisGameObject;
@@ -209,15 +192,8 @@ public class SoundManager : MonoBehaviour {
 	    else
 			PlayAllSounds();
  	}
-	
-	private static float BetweenZeroOne(float value){
-		float toReturn;
-		toReturn = (value < 0)? 0 : value;
-		toReturn = (toReturn > 1)? 1: toReturn;
-		return toReturn;
-	}
+
 	void Awake(){
-		
 		if(useSameSM){
 			if (SMInstance != null && SMInstance != this) {
 		        Destroy(this.gameObject);
@@ -245,13 +221,13 @@ public class SoundManager : MonoBehaviour {
 		
 		_AllSounds = AllSounds;
 
-        _pool = pool;
+        foreach (var item in pool)
+            _pool.Add(item.GetComponent<AudioSource>());
+
 		_usePool = usePool;
-		_qntPool = qntPool;
 		backgroundVolume = bkgVolume;
 		effectsVolume = efxVolume;
         voiceVolume = voiVolume;
-		_currentPoolIndex = 0;
 		_currentPlaying = null;
 		_playStreamSound = false;
 		_thisGameObject = gameObject;
@@ -281,10 +257,8 @@ public class SoundManager : MonoBehaviour {
 		StartingBkgsSounds = StartingBkgsSoundsHolder;
 		oldLevel = "";
 
-		if(playAtStart){
+		if(playAtStart)
 			SceneManager.sceneLoaded += OnSceneLoadPlayBackgroundMusic;
-			//OnSceneLoadPlayBackgroundMusic(SceneManager.GetActiveScene(), LoadSceneMode.Single);
-		}
 	}
 	
 	private IEnumerator DownloadStreamSound(Sound snd, int index){
@@ -335,8 +309,8 @@ public class SoundManager : MonoBehaviour {
 	void LateUpdate(){
 		if(_pool != null){
 			for(int i = 0;i < _pool.Count;i++){
-				if(!_pool[i].GetComponent<AudioSource>().isPlaying){
-					_pool[i].GetComponent<AudioSource>().clip = null;
+				if(!_pool[i].isPlaying){
+					_pool[i].clip = null;
 				}
 			}
 		}
@@ -388,7 +362,7 @@ public class SoundManager : MonoBehaviour {
 					}
 				}
 				if(_AllPlaying[i].currentSource != null){
-					if(!_AllPlaying[i].currentSource.isPlaying && !_AllPlaying[i].isMuted && !_AllPlaying[i].canShootEvent){
+					if(!_AllPlaying[i].currentSource.isPlaying && !_AllPlaying[i].canShootEvent){
 						_AllPlaying[i].currentSource.clip = null;
 						_AllPlaying.RemoveAt(i);
 					}
@@ -400,14 +374,12 @@ public class SoundManager : MonoBehaviour {
 	/// <summary>
 	/// Use this to add a sound manually, also return the created Sound.
 	/// </summary>
-	static public Sound AddSound(AudioClip clip, string name, soundTrack track, string language ,float volume, bool loop, bool fadeIn, float timeToFadeIn, bool fadeOut, float timeToFadeOut, bool is3D, Vector3 posFor3D, bool isTrigger, GameObject triggerTarget, float triggerTime, string functionForTrigger){
+	static public Sound AddSound(AudioClip clip, string name, soundTrack track, string language, bool loop, bool fadeIn, float timeToFadeIn, bool fadeOut, float timeToFadeOut, bool is3D, Vector3 posFor3D, bool isTrigger, GameObject triggerTarget, float triggerTime, string functionForTrigger){
 		Sound newSound = ScriptableObject.CreateInstance<Sound>();
 		newSound.clip = clip;
 		newSound.name = name;
 		newSound.track = track;
 		newSound.language = language;
-		newSound.volume = volume;
-		newSound.maxVolume = volume;
 		newSound.loop = loop;
 		newSound.fadeIn = fadeIn;
 		newSound.timeToFadeIn = timeToFadeIn;
@@ -433,14 +405,12 @@ public class SoundManager : MonoBehaviour {
 		return newSound;
 	}
 
-	static public Sound AddStreamSound(string URL, string name, soundTrack track, string language ,float volume, bool loop, bool fadeIn, float timeToFadeIn, bool fadeOut, float timeToFadeOut, bool is3D, Vector3 posFor3D, bool isTrigger, GameObject triggerTarget, float triggerTime, string functionForTrigger){
+	static public Sound AddStreamSound(string URL, string name, soundTrack track, string language, bool loop, bool fadeIn, float timeToFadeIn, bool fadeOut, float timeToFadeOut, bool is3D, Vector3 posFor3D, bool isTrigger, GameObject triggerTarget, float triggerTime, string functionForTrigger){
 		Sound newSound = ScriptableObject.CreateInstance<Sound>();
 		newSound.URL = URL;
 		newSound.name = name;
 		newSound.track = track;
 		newSound.language = language;
-		newSound.volume = volume;
-		newSound.maxVolume = volume;
 		newSound.loop = loop;
 		newSound.fadeIn = fadeIn;
 		newSound.timeToFadeIn = timeToFadeIn;
@@ -466,14 +436,12 @@ public class SoundManager : MonoBehaviour {
 		return newSound;
 	}
 
-	static public Sound AddResourceSound(string resourcePath, string name, soundTrack track, string language ,float volume, bool loop, bool fadeIn, float timeToFadeIn, bool fadeOut, float timeToFadeOut, bool is3D, Vector3 posFor3D, bool isTrigger, GameObject triggerTarget, float triggerTime, string functionForTrigger){
+	static public Sound AddResourceSound(string resourcePath, string name, soundTrack track, string language, bool loop, bool fadeIn, float timeToFadeIn, bool fadeOut, float timeToFadeOut, bool is3D, Vector3 posFor3D, bool isTrigger, GameObject triggerTarget, float triggerTime, string functionForTrigger){
 		Sound newSound = ScriptableObject.CreateInstance<Sound>();
 		newSound.nameInResourceFolder = resourcePath;
 		newSound.name = name;
 		newSound.track = track;
 		newSound.language = language;
-		newSound.volume = volume;
-		newSound.maxVolume = volume;
 		newSound.loop = loop;
 		newSound.fadeIn = fadeIn;
 		newSound.timeToFadeIn = timeToFadeIn;
@@ -655,180 +623,103 @@ public class SoundManager : MonoBehaviour {
 	/// Return an Sound Array of the playing name with the string passed as Param.
 	/// </summary>
 	static public Sound[] GetSoundPlaying(string clipName){
-		Sound[] toReturn;
 		List<Sound> hold = new List<Sound>();
 		for(int i = 0; i < _AllPlaying.Count;i++){
 			if(string.Equals(_AllPlaying[i].name, clipName))
 				hold.Add(_AllPlaying[i]);
 		}
-		toReturn = new Sound[hold.Count];
-		for(int i = 0; i<hold.Count;i++){
-			toReturn[i] = hold[i];
-		}
-		if(toReturn == null || toReturn.Length == 0)
+
+		if(hold.Count== 0)
 			Debug.LogWarning("There's no: "+clipName+" AudioClip set. Check the typo");
 		
-		return toReturn;
+		return hold.ToArray();
 	}
 	/// <summary>
 	/// Return an Sound Array of the playing name with the track passed as Param.
 	/// </summary>
 	static public Sound[] GetSoundPlaying(track trackCompare){
-		Sound[] toReturn;
 		List<Sound> hold = new List<Sound>();
-		switch(trackCompare){
-		case track.BackgroundSound:
-		case track.EffectSound:
-		case track.VoiceSound:
-			for(int i = 0; i < _AllPlaying.Count;i++){
-				if(string.Equals(_AllPlaying[i].track.ToString(), trackCompare.ToString())){
-					hold.Add(_AllSounds[i]);	
-				}
-			}
-			break;
-		case track.All:
-			for(int i = 0; i < _AllPlaying.Count;i++){
-				hold.Add(_AllPlaying[i]);
-			}
-			break;
-		}
-		toReturn = new Sound[hold.Count];
-		for(int i = 0; i<hold.Count;i++){
-			toReturn[i] = hold[i];
-		}
-		
-		if(toReturn == null || toReturn.Length == 0)
+        for (int i = 0; i < _AllPlaying.Count; i++)
+        {
+            if (trackCompare == track.All || string.Equals(_AllPlaying[i].track.ToString(), trackCompare.ToString()))
+                hold.Add(_AllSounds[i]);
+        }
+
+		if(hold.Count == 0)
 			Debug.LogWarning("There's no: "+trackCompare.ToString()+" Track set. Check the typo");
 		
-		return toReturn;
+		return hold.ToArray();
 	}
 	
 	/// <summary>
 	/// Set the volume of the track passed as Param.
 	/// </summary>
 	static public void Volume(float volume, track trackCompare){
-		Sound[] snds = GetSounds(trackCompare);
-		for(int i = 0; i<snds.Length;i++){
-            if(volume >= snds[i].maxVolume)
-            {
-                snds[i].volume = snds[i].maxVolume;
-                snds[i].lastVolumeSetted = snds[i].maxVolume;
-            }
-            else
-            {
-                snds[i].volume = volume;
-                snds[i].lastVolumeSetted = volume;
-            }
-		}
-		for(int i=0;i<_AllPlaying.Count;i++){
-			if(string.Equals(_AllPlaying[i].track.ToString(), trackCompare.ToString()) || trackCompare == track.All)
-			{
-				if(_AllPlaying[i].track == soundTrack.BackgroundSound && !_bkgMuted ||
-					_AllPlaying[i].track == soundTrack.EffectSound && !_efxMuted ||
-					_AllPlaying[i].track == soundTrack.VoiceSound && !_voiceMuted || !_allMuted){
-                    
-					if(volume <= 1.0f){
-                        if (volume > _AllPlaying[i].maxVolume)
-                        {
-                            _AllPlaying[i].currentSource.volume = _AllPlaying[i].maxVolume;
-                            _AllPlaying[i].lastVolumeSetted = _AllPlaying[i].maxVolume;
-                        }
-                        else
-                        {
-                            _AllPlaying[i].currentSource.volume = volume;
-                            _AllPlaying[i].lastVolumeSetted = volume;
-                        }
-						if(volume == 0.0f){ 
-							_AllPlaying[i].isMuted = true;
-							_AllPlaying[i].pauseEffect = true;
-						}else{ 
-							_AllPlaying[i].isMuted = false;
-							_AllPlaying[i].pauseEffect = false;
-						}
-					}else{
-						_AllPlaying[i].isMuted = false;
-						_AllPlaying[i].currentSource.volume = _AllPlaying[i].lastVolumeSetted;
-					}
-				}
-			}
-		}
-	}
-	/// <summary>
-	/// Set the volume of the clip name passed as Param.
-	/// </summary>
-	static public void Volume(float volume, string clipName){
-		for(int i=0;i<_AllPlaying.Count;i++){
-			if(string.Equals(clipName, _AllPlaying[i].name)){
-				if(_AllPlaying[i].track == soundTrack.BackgroundSound && !bkgMuted ||
-				_AllPlaying[i].track == soundTrack.EffectSound && !efxMuted ||
-				_AllPlaying[i].track == soundTrack.VoiceSound && !voiceMuted){
-                    if (volume == 0.0f)
-                    {
-                        _AllPlaying[i].isMuted = true;
-                        _AllPlaying[i].pauseEffect = true;
-                    }
-                    else
-                    {
-                        _AllPlaying[i].isMuted = false;
-                        _AllPlaying[i].pauseEffect = false;
-                    }
-
-                    if(volume > _AllPlaying[i].maxVolume)
-                    {
-                        _AllPlaying[i].currentSource.volume = _AllPlaying[i].maxVolume;
-                        _AllPlaying[i].lastVolumeSetted = _AllPlaying[i].maxVolume;
-                    }
-                    else
-                    {
-                        _AllPlaying[i].currentSource.volume = volume;
-                        _AllPlaying[i].lastVolumeSetted = volume;
-                    }
-				}
-			}
-		}
-		Sound clip = GetSound(clipName);
-		if(clip == null){
-			Debug.LogWarning("There's no: "+clipName+" AudioClip set to change it's volume. Check the typo");
-			return;
-		}
-        if(volume > clip.maxVolume)
+        volume = Mathf.Clamp01(volume);
+        switch(trackCompare)
         {
-            clip.volume = clip.maxVolume;
-            clip.lastVolumeSetted = clip.maxVolume;
-        }else
-        {
-            clip.volume = volume;
-            clip.lastVolumeSetted = volume;
+            case track.VoiceSound:
+                _voiceVolumeHold = volume;
+                break;
+            case track.BackgroundSound:
+                _bkgVolumeHold = volume;
+                break;
+            case track.EffectSound:
+                _efxVolumeHold = volume;
+                break;
+            case track.All:
+                _voiceVolumeHold = volume;
+                _bkgVolumeHold = volume;
+                _efxVolumeHold = volume;
+                _allVolumeHold = volume;
+                break;
         }
-	}
-	
-	/// <summary>
-	/// Mute the track passed as param.
-	/// </summary>
-	static public void Mute(bool mute, track compareTrack){
-		if(compareTrack == track.BackgroundSound)
-			_bkgMuted = mute;
-		else if(compareTrack == track.EffectSound)
-			_efxMuted = mute;
-		else if(compareTrack == track.VoiceSound)
-			_voiceMuted = mute;
-		else if(compareTrack == track.All){
-			_efxMuted = mute;
-			_bkgMuted = mute;
-			_voiceMuted = mute;
-		}
-        if (_efxMuted && _voiceMuted && _bkgMuted)
-            _allMuted = true;
-        else
-            _allMuted = false;
-		
-			Volume((mute)? 0 : 1, compareTrack);		
-	}
-	/// <summary>
-	/// Mute a single clip, passed as Param.
-	/// </summary>
-	static public void Mute(bool mute, string clipName){
-		Volume((mute)? 0 : 1,clipName);
+
+        InternalVolume(volume, trackCompare);
+
+    }
+
+    static private void InternalVolume(float volume, track trackCompare)
+    {
+        volume = Mathf.Clamp01(volume);
+        _AllPlaying.ForEach(x =>
+        {
+            if (string.Equals(x.track.ToString(), trackCompare.ToString()) || trackCompare == track.All)
+                x.currentSource.volume = volume;
+        });
+    }
+
+    /// <summary>
+    /// Mute the track passed as param.
+    /// </summary>
+    static public void Mute(bool mute, track compareTrack){
+        float unMuteVolume = 1;
+        if (compareTrack == track.BackgroundSound)
+        {
+            _bkgMuted = mute;
+            unMuteVolume = _bkgVolumeHold;
+        }
+        else if (compareTrack == track.EffectSound)
+        {
+            _efxMuted = mute;
+            unMuteVolume = _efxVolumeHold;
+        }
+        else if (compareTrack == track.VoiceSound)
+        {
+            _voiceMuted = mute;
+            unMuteVolume = _voiceVolumeHold;
+        }
+        else if (compareTrack == track.All)
+        {
+            _efxMuted = mute;
+            _bkgMuted = mute;
+            _voiceMuted = mute;
+            unMuteVolume = _allVolumeHold;
+        }
+
+        _allMuted = _efxMuted && _voiceMuted && _bkgMuted;
+
+        InternalVolume((mute)? 0 : unMuteVolume, compareTrack);		
 	}
 	/// <summary>
 	/// Stop every single sound.
@@ -850,55 +741,52 @@ public class SoundManager : MonoBehaviour {
 	}
 	
 	static public void PlayAllSounds(){
-		for(int i=0;i<_AllPlaying.Count;i++){
-			if(_AllPlaying[i].currentSource == null){
-				_AllPlaying.RemoveAt(i--);
-				continue;
-			}
-			_AllPlaying[i].currentSource.PlayDelayed(0);
-		}		
+        _AllPlaying.FindAll(x => x.currentSource != null).ForEach(x => x.currentSource.Play());
 	}
 	/// <summary>
 	/// Stop a single sound, passed as Param as String.
 	/// </summary>
-	static public void Stop(string name){
-		for(int i=0;i<_AllPlaying.Count;i++){
-			if(string.Equals(name, _AllPlaying[i].name)){
-				_AllPlaying[i].currentSource.Stop();
-			}
-		}	
+	static public void Stop(string name)
+    {
+        _AllPlaying.FindAll(x => x.name == name).ForEach(x => x.currentSource.Stop());
 	}
 	
 	/// <summary>
 	/// Play the (name) sound.
 	/// </summary>
-	static public Sound Play(string name){
+	static public Sound Play(string name)
+    {
 		return SoundManager.Play(name, 0.0f);
 	}
 	/// <summary>
 	/// Wait for (delay) seconds, than play the (name) sound.
 	/// </summary>
-	static public Sound Play(string name, float delay){
+	static public Sound Play(string name, float delay)
+    {
 		return SoundManager.Play(name, delay, 0.0f);
 	}
 	/// <summary>
 	/// Wait for (delay) seconds, than play the (param) sound at (playAt) seconds.
 	/// </summary>
-	static public Sound Play(string name, float delay, float playAt){
+	static public Sound Play(string name, float delay, float playAt)
+    {
 		return SoundManager.Play(name, delay, playAt, -1.0f);
 	}
 	/// <summary>
 	/// Wait for (delay) seconds, than play the (param) sound at (playAt) seconds, and than stop at (stopAt) seconds.
 	/// </summary>
-	static public Sound Play(string name, float delay, float playAt, float stopAt){
+	static public Sound Play(string name, float delay, float playAt, float stopAt)
+    {
 		Sound playingSound = null;
 		List<Sound> soundsFound = new List<Sound>();
-		for(int i = 0; i < _AllSounds.Length; i++){
+		for(int i = 0; i < _AllSounds.Length; i++)
+        {
             if (string.Equals(_AllSounds[i].name, name))           
                 soundsFound.Add(_AllSounds[i]);
 		}
 		
-		if(soundsFound.Count == 0){
+		if(soundsFound.Count == 0)
+        {
 			Debug.LogWarning("You sent the wrong name, there's none : "+name+" Sound");
 			return null;
 		}
@@ -924,9 +812,11 @@ public class SoundManager : MonoBehaviour {
 						return null;
 				}
 			}
-		}else{
+		}else
+        {
 			playingSound = soundsFound[0];	
-			if(_useMultiLanguage){
+			if(_useMultiLanguage)
+            {
 				if(playingSound.language != _currentLanguage && playingSound.language != "All")
 					return null;
 			}
@@ -935,94 +825,98 @@ public class SoundManager : MonoBehaviour {
 		AudioClip toPlay = (!playingSound.isResourceSound) ? playingSound.clip : Resources.Load(playingSound.nameInResourceFolder, typeof(AudioClip)) as AudioClip;
 
 		if(_usePool){
-			_totalPool = 0;
-			for(int i = 0; i<_pool.Count;i++){
-				if(_pool[i].GetComponent<AudioSource>().isPlaying)
-					_totalPool++;
-			}
-			if(_totalPool == _pool.Count)
-				return null;
-			if(_currentPoolIndex >= _qntPool)
-				_currentPoolIndex = 0;
-			_currentPlaying = _pool[_currentPoolIndex];
-			while(_pool[_currentPoolIndex].GetComponent<AudioSource>().isPlaying){
-				_currentPoolIndex++;
-				if(_currentPoolIndex >= _qntPool)
-					_currentPoolIndex = 0;
-				_currentPlaying = _pool[_currentPoolIndex];
-			}
-			_currentPlaying.transform.parent = _thisGameObject.transform;
-			_currentPlaying.transform.localPosition = new Vector3(0,0,0);
-			_currentPoolIndex++;
+            _currentPlaying = _pool.Find(x => !x.isPlaying || x.clip == null);
+            if (_currentPlaying == null)
+                return null;
 		}else{
 			GameObject holderSound = new GameObject("AudioEmitter");
-			holderSound.transform.parent = _thisGameObject.transform;
-			holderSound.AddComponent<AudioSource>();
-			holderSound.transform.localPosition = new Vector3(0,0,0);
+			
+			if(!playingSound.loop)
+				GameObject.Destroy(holderSound, toPlay.length+5.0f);
 
-			if(!playingSound.loop){
-					GameObject.Destroy(holderSound, toPlay.length+5.0f);
-			}
-			_currentPlaying = holderSound;
+			_currentPlaying = holderSound.AddComponent<AudioSource>(); ;
 		}
-		AudioSource AS = _currentPlaying.GetComponent<AudioSource>();
-		if(string.Equals(playingSound.track.ToString(), track.EffectSound.ToString()) && efxMuted)
-			playingSound.volume = 0;
-		if(string.Equals(playingSound.track.ToString(), track.BackgroundSound.ToString()) && bkgMuted)
-			playingSound.volume = 0;
-		if(string.Equals(playingSound.track.ToString(), track.VoiceSound.ToString()) && voiceMuted)
-			playingSound.volume = 0;
-		if(allMuted)
-			playingSound.volume = 0;
 
-        AS.volume = playingSound.volume;
+        _currentPlaying.transform.parent = _thisGameObject.transform;
+        _currentPlaying.transform.localPosition = new Vector3(0, 0, 0);
+
+        _currentPlaying.volume = allVolume;
+
+        switch(playingSound.track)
+        {
+            case soundTrack.BackgroundSound:
+                _currentPlaying.volume = backgroundVolume;
+                break;
+            case soundTrack.EffectSound:
+                _currentPlaying.volume = effectsVolume;
+                break;
+            case soundTrack.VoiceSound:
+                _currentPlaying.volume = voiceVolume;
+                break;
+        }
+
+		if(allMuted)
+            _currentPlaying.volume = 0;
 		
-		if(playingSound._3D){
+		if(playingSound._3D)
+        {
 			_currentPlaying.transform.parent = null;
-			if(playingSound.followObject){
+			if(playingSound.followObject)
+            {
 				_currentPlaying.transform.parent = playingSound.tTarget.transform;
 				_currentPlaying.transform.localPosition = new Vector3(0,0,0);
 			}
 			if(playingSound.v3Target.x != 0 || playingSound.v3Target.y != 0 || playingSound.v3Target.y != 0)
 			{
 				_currentPlaying.transform.position = playingSound.v3Target;	
-			}else if(playingSound.tTarget != null){
+			}
+            else if(playingSound.tTarget != null)
+            {
 				_currentPlaying.transform.position = playingSound.tTarget.transform.position;	
 			}
 		}
-		if(playingSound.fadeIn && playingSound.timeToFadeIn > 0){
-			AS.volume = 0;
+		if(playingSound.fadeIn && playingSound.timeToFadeIn > 0)
+        {
+			_currentPlaying.volume = 0;
 			playingSound.controllerFadeIn = 0;	
 		}
 		
 		playingSound.controllerFadeOut = 0;
-		if(playingSound.fadeOut && playingSound.timeToFadeOut > 0 && playingSound.clip.length > playingSound.timeToFadeOut){
+
+		if(playingSound.fadeOut && playingSound.timeToFadeOut > 0 && playingSound.clip.length > playingSound.timeToFadeOut)
+        {
 			playingSound.controllerFadeOut = playingSound.clip.length - playingSound.timeToFadeOut;
 			playingSound.fadeOutTimer = 0;
 		}
 		//playingSound.maxVolume = playingSound.volume;
-		playingSound.lastVolumeSetted = playingSound.volume;
-		AS.loop = playingSound.loop;
+        _currentPlaying.loop = playingSound.loop;
 		playingSound.stopAt = (stopAt > 0 && stopAt < playingSound.clip.length) ? stopAt : 0;
-		playingSound.isMuted = false;
-		AS.clip = toPlay;
-		playingSound.currentSource = AS;
-		if(playingSound._3D && playingSound.followObject){
+        _currentPlaying.clip = toPlay;
+		playingSound.currentSource = _currentPlaying;
+
+		if(playingSound._3D && playingSound.followObject)
+        {
 			playingSound.currentSource.spread = 180.0f;
 			playingSound.currentSource.dopplerLevel = 0;
 		}
-		if(playingSound.timeToTrigger < -1)playingSound.canShootEvent = false;
-		else playingSound.canShootEvent = true;
-		if(playingSound.timeToTrigger == -1)playingSound.timeToTrigger = playingSound.clip.length;
+
+		if(playingSound.timeToTrigger < -1)
+            playingSound.canShootEvent = false;
+		else 
+            playingSound.canShootEvent = true;
+
+		if(playingSound.timeToTrigger == -1)
+            playingSound.timeToTrigger = playingSound.clip.length;
 		_AllPlaying.Add(playingSound);
-		if(playingSound.isStreamSound){
-			_streamSoundSource.Add(AS);
+		if(playingSound.isStreamSound)
+        {
+			_streamSoundSource.Add(_currentPlaying);
 			_streamSoundClip.Add(playingSound.clip);
 			_playStreamSound = true;
 			return playingSound;
 		}
-        AS.PlayScheduled((AudioSettings.dspTime + delay));
-		AS.time = playAt;
+        _currentPlaying.PlayScheduled((AudioSettings.dspTime + delay));
+        _currentPlaying.time = playAt;
 
 		playingSound.clip = toPlay;
 

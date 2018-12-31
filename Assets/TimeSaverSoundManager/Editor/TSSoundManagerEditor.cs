@@ -575,12 +575,6 @@ public class TSSoundManagerEditor : Editor {
                 GUILayout.EndHorizontal();
 				
 				GUILayout.BeginHorizontal();
-				holder.volume = EditorGUILayout.Slider("Volume", holder.volume, 0, 1);
-				holder.lastVolumeSetted = holder.volume;
-                holder.maxVolume = holder.volume;
-                GUILayout.EndHorizontal();
-				
-				GUILayout.BeginHorizontal();
 				holder.loop = EditorGUILayout.Toggle("Loop",holder.loop);
 				GUILayout.EndHorizontal();
 				
@@ -731,12 +725,6 @@ public class TSSoundManagerEditor : Editor {
 				GUILayout.BeginHorizontal();
 				holder.name = EditorGUILayout.TextField("Name", holder.name);
 				GUILayout.EndHorizontal();
-				
-				GUILayout.BeginHorizontal();
-				holder.volume = EditorGUILayout.Slider("Volume", holder.volume, 0, 1);
-				holder.lastVolumeSetted = holder.volume;
-                holder.maxVolume = holder.volume;
-                GUILayout.EndHorizontal();
 				
 				/*GUILayout.BeginHorizontal();
 				holder.stream = EditorGUILayout.Toggle("Stream",holder.stream);
@@ -894,12 +882,6 @@ public class TSSoundManagerEditor : Editor {
 				GUILayout.EndHorizontal();
 
 				GUILayout.BeginHorizontal();
-				holder.volume = EditorGUILayout.Slider("Volume", holder.volume, 0, 1);
-				holder.lastVolumeSetted = holder.volume;
-                holder.maxVolume = holder.volume;
-                GUILayout.EndHorizontal();
-
-				GUILayout.BeginHorizontal();
 				holder.loop = EditorGUILayout.Toggle("Loop",holder.loop);
 				GUILayout.EndHorizontal();
 
@@ -1018,9 +1000,6 @@ public class TSSoundManagerEditor : Editor {
 		if(GUILayout.Button("Add Sound",new GUILayoutOption[] {GUILayout.Width(120),GUILayout.Height(25), GUILayout.ExpandWidth(false)})){
 			Sound myNewSound = ScriptableObject.CreateInstance<Sound>();
 			myNewSound.name = "ToChange";
-			myNewSound.volume = 1;
-			myNewSound.maxVolume = 1;
-			myNewSound.lastVolumeSetted = 1;
 			myNewSound.isStreamSound = false;
 			myNewSound.isResourceSound = false;
 			myNewSound.languageIndexHolder = _AllLanguagesHolderSize.intValue;
@@ -1033,9 +1012,6 @@ public class TSSoundManagerEditor : Editor {
 		if(GUILayout.Button("Add Stream Sound",new GUILayoutOption[] {GUILayout.Width(120),GUILayout.Height(25), GUILayout.ExpandWidth(false)})){
 			Sound myNewSound = ScriptableObject.CreateInstance<Sound>();
 			myNewSound.name = "ToChange";
-			myNewSound.volume = 1;
-			myNewSound.maxVolume = 1;
-			myNewSound.lastVolumeSetted = 1;
 			myNewSound.isStreamSound = true;
 			myNewSound.isResourceSound = false;
 			myNewSound.languageIndexHolder = _AllLanguagesHolderSize.intValue;
@@ -1048,9 +1024,6 @@ public class TSSoundManagerEditor : Editor {
 		if(GUILayout.Button("Add Resource Sound",new GUILayoutOption[] {GUILayout.Width(120),GUILayout.Height(25), GUILayout.ExpandWidth(false)})){
 			Sound myNewSound = ScriptableObject.CreateInstance<Sound>();
 			myNewSound.name = "ToChange";
-			myNewSound.volume = 1;
-			myNewSound.maxVolume = 1;
-			myNewSound.lastVolumeSetted = 1;
 			myNewSound.isStreamSound = false;
 			myNewSound.isResourceSound = true;
 			myNewSound.languageIndexHolder = _AllLanguagesHolderSize.intValue;
@@ -1080,9 +1053,6 @@ public class TSSoundManagerEditor : Editor {
 				str = nStr[nStr.Length-1];
 				nStr = str.Split('.');
 				myNewSound.name = nStr[0];
-				myNewSound.volume = 1.0f;
-				myNewSound.lastVolumeSetted = 1.0f;
-				myNewSound.maxVolume = 1.0f;
 				myNewSound.languageIndexHolder = _AllLanguagesHolderSize.intValue;
 				if(_AllLanguages.arraySize > 0)
 					myNewSound.language = (_AllLanguages.GetArrayElementAtIndex(0).objectReferenceValue as Sound).name;	

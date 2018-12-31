@@ -35,8 +35,6 @@ public class Sound : ScriptableObject{
 	[SerializeField]
 	public new string name;
 	[SerializeField]
-	public float volume;
-	[SerializeField]
 	public soundTrack track;
 	[SerializeField]
 	public bool loop;
@@ -89,32 +87,16 @@ public class Sound : ScriptableObject{
 	[SerializeField]
 	public AudioSource currentSource;
 
-	public bool isPreviwing, pauseEffect, showCarac, isMuted, canShootEvent;
-	public float stopAt, controllerFadeOut, fadeOutTimer, delayToPlay, maxVolume, lastVolumeSetted;
-	
-	private float oldVolumeSetted;
-	
-	// Use this for initialization
-	void Start () {
-		oldVolumeSetted = currentSource.volume;
-	}
-	
-	public void Stop(){
+	public bool isPreviwing, pauseEffect, showCarac, canShootEvent;
+    public float stopAt, controllerFadeOut, fadeOutTimer, delayToPlay;
+
+    public void Stop(){
 		if(this.currentSource)
 			this.currentSource.Stop();	
 	}
-	public void Mute(bool value){
-		if(value)
-			oldVolumeSetted = this.currentSource.volume;
-		
-		isMuted = value;
-		this.currentSource.volume = (value) ? 0 : oldVolumeSetted;
-	}
+
 	public void Pause(bool value){
 		this.currentSource.Pause();
-	}
-	public void Volume(int value){
-		this.currentSource.volume = Mathf.Clamp(value, 0, 1);
 	}
 
 	public Sound SetEventTrigger(soundEventType type, string func, GameObject target){
